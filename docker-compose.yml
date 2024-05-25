@@ -1,0 +1,65 @@
+version: '3.0'
+
+services:
+  ##### uncomment this for running from docker hub #####
+  # web:
+  #   container_name: belibang-web
+  #   image: rereasdev/belibang:latest
+  #   env_file:
+  #     - belibang.env
+  #   ports:
+  #     - 8080:8080
+  #   networks:
+  #     - eniqilo
+
+  web:
+    build: .
+    container_name: belibang-web
+    # image: rereasdev/belibang:prefork
+    env_file:
+      - belibang.env
+    ports:
+      - 8080:8080
+    volumes:
+      - .:/usr/src/app
+    command: air main.go -b 0.0.0.0
+    networks:
+      - eniqilo
+    # mem_limit: 2048m
+    # cpus: 0.25
+
+  db:
+    container_name: belibang-db
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=belibang
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=belibang-db
+      - POSTGRES_HOST=belibang-db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgres/data
+    networks:
+      - eniqilo
+    # mem_limit: 2048m
+    # cpus: 0.25
+
+  minio:
+    container_name: belibang-minio
+    image: quay.io/minio/minio
+    environment:
+      - MINIO_ROOT_USER=belibang
+      - MINIO_ROOT_PASSWORD=password
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./minio-data:/data
+    networks:
+      - eniqilo
+    command: server /data --console-address ":9001"
+
+networks:
+  eniqilo:
+    external: true

@@ -1,0 +1,59 @@
+# name: Deploy Halo-Sus to Amazon ECS
+
+# on:
+#   push:
+#     branches: [main]
+
+# env:
+#   AWS_REGION: ${{ vars.AWS_REGION }} 
+#   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+#   ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+#   ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+#   CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
+# jobs:
+#   build-and-push:
+#     name: Build and Push to ECR
+#     runs-on: ubuntu-latest
+#     environment: production
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v1
+#         with:
+#           aws-access-key-id: ${{ secrets.CONSOLE_ACCESS_KEY }}
+#           aws-secret-access-key: ${{ secrets.CONSOLE_SECRET_KEY }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Login to Amazon ECR
+#         id: login-ecr
+#         uses: aws-actions/amazon-ecr-login@v1
+
+#       - name: Automatic tagging of releases
+#         id: increment-git-tag
+#         # check https://semver.org/
+#         # version format: v.{major}.{minor}.{patch}
+#         # try -v patch|major|minor
+#         run: |
+#           bash ./git_update.sh -v patch
+
+#       - name: Build, tag, and push image to Amazon ECR
+#         id: build-image
+#         env:
+#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#           IMAGE_TAG: ${{ steps.increment-git-tag.outputs.git-tag }}
+#         run: |
+#           # Build a docker container and
+#           # push it to ECR so that it can
+#           # be deployed to ECS.
+#           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+#           docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
+#           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
+
+#       - name: Force Deploy Amazon ECS
+#         id: deploy-ecs
+#         run: |
+#           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
