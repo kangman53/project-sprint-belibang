@@ -11,7 +11,7 @@ type itemRepositoryImpl struct {
 	DBpool *pgxpool.Pool
 }
 
-func NewMerchantRepository(dbPool *pgxpool.Pool) ItemRepository {
+func NewItemRepository(dbPool *pgxpool.Pool) ItemRepository {
 	return &itemRepositoryImpl{
 		DBpool: dbPool,
 	}

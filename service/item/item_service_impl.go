@@ -15,7 +15,7 @@ type itemServiceImpl struct {
 	Validator      *validator.Validate
 }
 
-func NewMerchantService(itemRepository itemRep.ItemRepository, validator *validator.Validate) ItemService {
+func NewItemService(itemRepository itemRep.ItemRepository, validator *validator.Validate) ItemService {
 	return &itemServiceImpl{
 		ItemRepository: itemRepository,
 		Validator:      validator,
@@ -27,7 +27,7 @@ func (service *itemServiceImpl) Add(ctx *fiber.Ctx, req item_entity.AddItemReque
 		return item_entity.AddItemResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
 	}
 
-	merchant := item_entity.Item{
+	item := item_entity.Item{
 		Name:     req.Name,
 		Category: req.Category,
 		ImageUrl: req.ImageUrl,
@@ -35,7 +35,7 @@ func (service *itemServiceImpl) Add(ctx *fiber.Ctx, req item_entity.AddItemReque
 	}
 
 	userCtx := ctx.UserContext()
-	itemId, err := service.ItemRepository.Add(userCtx, merchant)
+	itemId, err := service.ItemRepository.Add(userCtx, item)
 	if err != nil {
 		return item_entity.AddItemResponse{}, err
 	}

@@ -4,10 +4,12 @@ import (
 	"github.com/kangman53/project-sprint-belibang/controller"
 	"github.com/kangman53/project-sprint-belibang/helpers"
 
+	item_repository "github.com/kangman53/project-sprint-belibang/repository/item"
 	merchant_repository "github.com/kangman53/project-sprint-belibang/repository/merchant"
 	user_repository "github.com/kangman53/project-sprint-belibang/repository/user"
 	auth_service "github.com/kangman53/project-sprint-belibang/service/auth"
 	file_service "github.com/kangman53/project-sprint-belibang/service/file"
+	item_service "github.com/kangman53/project-sprint-belibang/service/item"
 	merchant_service "github.com/kangman53/project-sprint-belibang/service/merchant"
 	user_service "github.com/kangman53/project-sprint-belibang/service/user"
 
@@ -34,6 +36,10 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	merchantService := merchant_service.NewMerchantService(merchantRepository, validator)
 	merchantController := controller.NewMerchantController(merchantService)
 
+	itemRepository := item_repository.NewItemRepository(dbPool)
+	itemService := item_service.NewItemService(itemRepository, validator)
+	itemController := controller.NewItemController(itemService)
+
 	// Users API
 	adminApi := app.Group("/admin")
 	adminApi.Post("/register", userController.Register)
@@ -50,4 +56,8 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	// Merchants API
 	merchantApi := adminApi.Group("/merchants")
 	merchantApi.Post("/", authService.AuthorizeRole("admin"), merchantController.Add)
+
+	// Items API
+	itemsApi := merchantApi.Group("/:merchantId/items")
+	itemsApi.Post("/", authService.AuthorizeRole("admin"), itemController.Add)
 }
