@@ -19,7 +19,7 @@ func NewMerchantRepository(dbPool *pgxpool.Pool) MerchantRepository {
 
 func (repository *merchantRepositoryImpl) Add(ctx context.Context, merchant merchant_entity.Merchant) (string, error) {
 	var merchantId string
-	query := "INSERT INTO merchants (name, category, image_url, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING id"
+	query := "INSERT INTO merchants (name, category, image_url, latitude, longitude) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	if err := repository.DBpool.QueryRow(ctx, query, merchant.Name, merchant.Category, merchant.ImageUrl, merchant.Latitude, merchant.Longitude).Scan(&merchantId); err != nil {
 		return "", err
 	}

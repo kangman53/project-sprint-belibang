@@ -46,15 +46,15 @@ func checkCategory(categories []string, val string) bool {
 func validateGeoCoord(fl validator.FieldLevel) bool {
 	value := fl.Field().Float()
 	checkVal := fl.Param()
-	geoRule := 0.0
+	maxCoord := 0.0
 
 	if checkVal == "lat" {
-		geoRule = 90.0
+		maxCoord = 90.0
 	} else {
-		geoRule = 180.0
+		maxCoord = 180.0
 	}
 
-	return value >= -geoRule && value <= geoRule
+	return value >= -maxCoord && value <= maxCoord
 }
 
 func validateISO8601DateTime(fl validator.FieldLevel) bool {

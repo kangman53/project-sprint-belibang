@@ -8,6 +8,6 @@ type AddMerchantRequest struct {
 }
 
 type LocationDetails struct {
-	Latitude  float64 `json:"latitude" validate:"required,validateGeoCoord=lat"`
-	Longitude float64 `json:"longitude" validate:"required,validateGeoCoord=long"`
+	Latitude  float64 `json:"lat" validate:"required,validateGeoCoord=lat"`
+	Longitude float64 `json:"long" validate:"required,validateGeoCoord=long"`
 }
