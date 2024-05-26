@@ -18,7 +18,7 @@ func NewMerchantController(merchantService merchant_service.MerchantService) *Me
 }
 
 func (controller MerchantController) Add(ctx *fiber.Ctx) error {
-	merchantReq := new(merchant_entity.MerchantRegisterRequest)
+	merchantReq := new(merchant_entity.AddMerchantRequest)
 	if err := ctx.BodyParser(merchantReq); err != nil {
 		return exc.BadRequestException("Failed to parse request body")
 	}

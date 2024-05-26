@@ -22,9 +22,9 @@ func NewMerchantService(merchantRepository merchantRep.MerchantRepository, valid
 	}
 }
 
-func (service *merchantServiceImpl) Add(ctx *fiber.Ctx, req merchant_entity.MerchantRegisterRequest) (merchant_entity.MerchantRegisterResponse, error) {
+func (service *merchantServiceImpl) Add(ctx *fiber.Ctx, req merchant_entity.AddMerchantRequest) (merchant_entity.AddMerchantResponse, error) {
 	if err := service.Validator.Struct(req); err != nil {
-		return merchant_entity.MerchantRegisterResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+		return merchant_entity.AddMerchantResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
 	}
 
 	merchant := merchant_entity.Merchant{
@@ -38,10 +38,10 @@ func (service *merchantServiceImpl) Add(ctx *fiber.Ctx, req merchant_entity.Merc
 	userCtx := ctx.UserContext()
 	merchantId, err := service.MerchantRepository.Add(userCtx, merchant)
 	if err != nil {
-		return merchant_entity.MerchantRegisterResponse{}, err
+		return merchant_entity.AddMerchantResponse{}, err
 	}
 
-	return merchant_entity.MerchantRegisterResponse{
+	return merchant_entity.AddMerchantResponse{
 		Id: merchantId,
 	}, nil
 }

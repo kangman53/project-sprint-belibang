@@ -6,5 +6,5 @@ import (
 )
 
 type MerchantService interface {
-	Add(ctx *fiber.Ctx, req merchant_entity.MerchantRegisterRequest) (merchant_entity.MerchantRegisterResponse, error)
+	Add(ctx *fiber.Ctx, req merchant_entity.AddMerchantRequest) (merchant_entity.AddMerchantResponse, error)
 }

@@ -1,5 +1,5 @@
 package merchant_entity
 
-type MerchantRegisterResponse struct {
+type AddMerchantResponse struct {
 	Id string `json:"merchantId"`
 }
