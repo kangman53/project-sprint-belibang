@@ -35,7 +35,8 @@ func (service *itemServiceImpl) Add(ctx *fiber.Ctx, req item_entity.AddItemReque
 	}
 
 	userCtx := ctx.UserContext()
-	itemId, err := service.ItemRepository.Add(userCtx, item)
+	merchantId := ctx.Params("merchantId")
+	itemId, err := service.ItemRepository.Add(userCtx, item, merchantId)
 	if err != nil {
 		return item_entity.AddItemResponse{}, err
 	}

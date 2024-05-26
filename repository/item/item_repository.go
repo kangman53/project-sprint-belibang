@@ -7,5 +7,5 @@ import (
 )
 
 type ItemRepository interface {
-	Add(ctx context.Context, req item_entity.Item) (string, error)
+	Add(ctx context.Context, req item_entity.Item, merchantId string) (string, error)
 }
