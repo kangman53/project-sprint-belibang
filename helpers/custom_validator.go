@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -25,39 +24,37 @@ func validateUrl(fl validator.FieldLevel) bool {
 	return matched
 }
 
-func validateProductCategory(fl validator.FieldLevel) bool {
+func validateCategory(fl validator.FieldLevel) bool {
 	value := fl.Field().String()
+	categVal := fl.Param()
 
-	for _, categ := range ProductCategory {
-		if categ == value {
+	if categVal == "merchant" {
+		return checkCategory(MerchantCategory, value)
+	}
+	return checkCategory(ItemCategory, value)
+}
+
+func checkCategory(categories []string, val string) bool {
+	for _, categ := range categories {
+		if categ == val {
 			return true
 		}
 	}
 	return false
 }
 
-func validatNipByRole(value string, code string) bool {
+func validateGeoCoord(fl validator.FieldLevel) bool {
+	value := fl.Field().Float()
+	checkVal := fl.Param()
+	maxCoord := 0.0
 
-	pattern := fmt.Sprintf(`^%s[12]20(?:0[0-9]|1[0-9]|2[0-4])(0[1-9]|1[0-2])([0-9]{3,5})$`, code)
-	matched, _ := regexp.MatchString(pattern, value)
-	return matched
-}
+	if checkVal == "lat" {
+		maxCoord = 90.0
+	} else {
+		maxCoord = 180.0
+	}
 
-func validateITNip(fl validator.FieldLevel) bool {
-	value := fl.Field().String()
-
-	return validatNipByRole(value, "615")
-}
-
-func validateNurseNip(fl validator.FieldLevel) bool {
-	value := fl.Field().String()
-
-	return validatNipByRole(value, "303")
-}
-
-func validateGender(fl validator.FieldLevel) bool {
-	value := fl.Field().String()
-	return value == "male" || value == "female"
+	return value >= -maxCoord && value <= maxCoord
 }
 
 func validateISO8601DateTime(fl validator.FieldLevel) bool {
@@ -77,12 +74,9 @@ func RegisterCustomValidator(validator *validator.Validate) {
 	// validator.RegisterValidation() -> if you want to create new tags rule to be used on struct entity
 	// validator.RegisterStructValidation() -> if you want to create validator then access all fields to the struct entity
 
-	validator.RegisterValidation("phoneNumber", validatePhoneNumber)
-	validator.RegisterValidation("productCategory", validateProductCategory)
+	validator.RegisterValidation("validateCategory", validateCategory)
 	validator.RegisterValidation("validateUrl", validateUrl)
-	validator.RegisterValidation("nipIT", validateITNip)
-	validator.RegisterValidation("nipNurse", validateNurseNip)
-	validator.RegisterValidation("gender", validateGender)
+	validator.RegisterValidation("validateGeoCoord", validateGeoCoord)
 	validator.RegisterValidation("ISO8601DateTime", validateISO8601DateTime)
 	validator.RegisterValidation("int16length", validateInt16Length)
 }

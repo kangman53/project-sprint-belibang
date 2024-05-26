@@ -29,6 +29,55 @@ func InitiateTables(dbPool *pgxpool.Pool) error {
 		CREATE INDEX IF NOT EXISTS index_users_role
 			ON users (role);		
 		`,
+		`
+		CREATE TABLE IF NOT EXISTS merchants (
+			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			name VARCHAR(30) NOT NULL,
+			category VARCHAR(100) NOT NULL,
+			image_url TEXT NOT NULL,
+			latitude DOUBLE PRECISION NOT NULL,
+			longitude DOUBLE PRECISION NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE INDEX IF NOT EXISTS index_merchants_id
+			ON merchants (id);
+		CREATE INDEX IF NOT EXISTS index_merchants_name
+			ON merchants USING HASH(lower(name));
+		CREATE INDEX IF NOT EXISTS index_merchants_category
+			ON merchants (category);
+		CREATE INDEX IF NOT EXISTS index_merchants_latitude
+			ON merchants (latitude);
+		CREATE INDEX IF NOT EXISTS index_merchants_longitude
+			ON merchants (longitude);	
+		CREATE INDEX IF NOT EXISTS index_merchants_created_at_desc
+			ON merchants (created_at DESC);
+		CREATE INDEX IF NOT EXISTS index_merchants_created_at_asc
+			ON merchants (created_at ASC);
+		`,
+		`
+		CREATE TABLE IF NOT EXISTS items (
+			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			name VARCHAR(30) NOT NULL,
+			category VARCHAR(100) NOT NULL,
+			price INT NOT NULL,
+			image_url TEXT NOT NULL,
+			merchant_id VARCHAR(36) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
+		);
+		CREATE INDEX IF NOT EXISTS index_items_merchant_id
+			ON items (merchant_id);
+		CREATE INDEX IF NOT EXISTS index_items_id
+			ON items (id);
+		CREATE INDEX IF NOT EXISTS index_items_name
+			ON merchants USING HASH(lower(name));
+		CREATE INDEX IF NOT EXISTS index_items_category
+			ON items (category);
+		CREATE INDEX IF NOT EXISTS index_items_created_at_desc
+			ON items (created_at DESC);
+		CREATE INDEX IF NOT EXISTS index_items_created_at_asc
+			ON items (created_at ASC);
+		`,
 		// Add more table creation queries here if needed
 	}
 
