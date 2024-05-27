@@ -44,7 +44,7 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	adminApi := app.Group("/admin")
 	adminApi.Post("/register", userController.Register)
 	adminApi.Post("/login", userController.Login)
-	userApi := app.Group("/user")
+	userApi := app.Group("/users")
 	userApi.Post("/login", userController.Login)
 	userApi.Post("/register", userController.Register)
 
