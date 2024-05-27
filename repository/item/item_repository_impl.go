@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	item_entity "github.com/kangman53/project-sprint-belibang/entity/item"
+	exc "github.com/kangman53/project-sprint-belibang/exceptions"
 )
 
 type itemRepositoryImpl struct {
@@ -31,6 +32,15 @@ func (repository *itemRepositoryImpl) Add(ctx context.Context, item item_entity.
 }
 
 func (repository *itemRepositoryImpl) Search(ctx context.Context, searchQuery item_entity.SearchItemQuery, merchantId string) (*[]item_entity.SearchItemData, error) {
+	// check merchant id exist
+	existMerchantQuery := `SELECT id FROM merchants WHERE id = $1`
+	if err := repository.DBpool.QueryRow(ctx, existMerchantQuery, merchantId).Scan(new(string)); err != nil {
+		if err == pgx.ErrNoRows {
+			return &[]item_entity.SearchItemData{}, exc.NotFoundException("Merchant ID does not exist")
+		}
+		return &[]item_entity.SearchItemData{}, err
+	}
+
 	query := `SELECT id, name, category, price, image_url, 
 	to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') created_at
 	FROM items`
@@ -69,7 +79,7 @@ func (repository *itemRepositoryImpl) Search(ctx context.Context, searchQuery it
 		searchQuery.Offset = 0
 	}
 
-	query += fmt.Sprintf("LIMIT %d OFFSET %d", searchQuery.Limit, searchQuery.Offset)
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", searchQuery.Limit, searchQuery.Offset)
 	rows, err := repository.DBpool.Query(ctx, query, searchParams...)
 	if err != nil {
 		return &[]item_entity.SearchItemData{}, err
