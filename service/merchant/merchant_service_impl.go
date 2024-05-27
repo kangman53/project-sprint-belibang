@@ -1,6 +1,7 @@
 package merchant_service
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/go-playground/validator"
@@ -44,4 +45,25 @@ func (service *merchantServiceImpl) Add(ctx *fiber.Ctx, req merchant_entity.AddM
 	return merchant_entity.AddMerchantResponse{
 		Id: merchantId,
 	}, nil
+}
+
+func (service *merchantServiceImpl) Search(ctx context.Context, searchQuery merchant_entity.SearchMerchantQuery) (merchant_entity.SearchMerchantResponse, error) {
+	if err := service.Validator.Struct(searchQuery); err != nil {
+		return merchant_entity.SearchMerchantResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	merchantSearched, err := service.MerchantRepository.Search(ctx, searchQuery)
+	if err != nil {
+		return merchant_entity.SearchMerchantResponse{}, err
+	}
+
+	return merchant_entity.SearchMerchantResponse{
+		Data: merchantSearched,
+		Meta: &merchant_entity.MetaData{
+			Limit:  searchQuery.Limit,
+			Offset: searchQuery.Offset,
+			Total:  len(*merchantSearched),
+		},
+	}, nil
+
 }

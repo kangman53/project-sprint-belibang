@@ -29,3 +29,20 @@ func (controller MerchantController) Add(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(resp)
 }
+
+func (controller MerchantController) Search(ctx *fiber.Ctx) error {
+	searchQuery := new(merchant_entity.SearchMerchantQuery)
+	searchQuery.Limit = 5
+	searchQuery.Offset = 0
+
+	if err := ctx.QueryParser(searchQuery); err != nil {
+		return exc.BadRequestException("Failed to parse request query")
+	}
+
+	resp, err := controller.MerchantService.Search(ctx.UserContext(), *searchQuery)
+	if err != nil {
+		return exc.Exception(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}

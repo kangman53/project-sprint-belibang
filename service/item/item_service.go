@@ -7,4 +7,5 @@ import (
 
 type ItemService interface {
 	Add(ctx *fiber.Ctx, req item_entity.AddItemRequest) (item_entity.AddItemResponse, error)
+	Search(ctx *fiber.Ctx, req item_entity.SearchItemQuery) (item_entity.SearchItemResponse, error)
 }

@@ -6,3 +6,8 @@ type AddItemRequest struct {
 	Price    int    `json:"price" validate:"required,min=1"`
 	ImageUrl string `json:"imageUrl" validate:"required,validateUrl"`
 }
+
+type SearchItemQuery struct {
+	ItemId, Name, Category, CreatedAt string
+	Limit, Offset                     int
+}

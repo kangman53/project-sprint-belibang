@@ -8,4 +8,5 @@ import (
 
 type ItemRepository interface {
 	Add(ctx context.Context, req item_entity.Item, merchantId string) (string, error)
+	Search(ctx context.Context, req item_entity.SearchItemQuery, merchantId string) (*[]item_entity.SearchItemData, error)
 }
