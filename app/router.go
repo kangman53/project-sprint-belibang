@@ -61,4 +61,5 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	// Items API
 	itemsApi := merchantApi.Group("/:merchantId/items")
 	itemsApi.Post("/", authService.AuthorizeRole("admin"), itemController.Add)
+	itemsApi.Get("/", authService.AuthorizeRole("admin"), itemController.Search)
 }
