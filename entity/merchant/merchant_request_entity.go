@@ -13,6 +13,6 @@ type LocationDetails struct {
 }
 
 type SearchMerchantQuery struct {
-	Id, Name, Category, CreatedAt string
-	Limit, Offset                 int
+	MerchantId, Name, Category, CreatedAt string
+	Limit, Offset                         int
 }

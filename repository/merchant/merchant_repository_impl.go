@@ -32,14 +32,16 @@ func (repository *merchantRepositoryImpl) Add(ctx context.Context, merchant merc
 
 func (repository *merchantRepositoryImpl) Search(ctx context.Context, searchQuery merchant_entity.SearchMerchantQuery) (*[]merchant_entity.SearchMerchantData, error) {
 	query := `SELECT id, name, category, image_url, 
-	JSON_BUILD_OBJECT('lat', latitude, 'long', longitude) AS location, created_at`
+	JSON_BUILD_OBJECT('lat', latitude, 'long', longitude) AS location, 
+	to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') created_at
+	FROM merchants`
 
 	var whereClause []string
 	var searchParams []interface{}
 
-	if searchQuery.Id != "" {
+	if searchQuery.MerchantId != "" {
 		whereClause = append(whereClause, fmt.Sprintf("id = $%d", len(searchParams)+1))
-		searchParams = append(searchParams, searchQuery.Id)
+		searchParams = append(searchParams, searchQuery.MerchantId)
 	}
 	if searchQuery.Name != "" {
 		whereClause = append(whereClause, fmt.Sprintf("name ~* $%d", len(searchParams)+1))
