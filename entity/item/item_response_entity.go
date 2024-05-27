@@ -5,7 +5,7 @@ type AddItemResponse struct {
 }
 
 type SearchItemResponse struct {
-	Data []*SearchItemData `json:"data"`
+	Data *[]SearchItemData `json:"data"`
 	Meta *MetaData         `json:"meta"`
 }
 

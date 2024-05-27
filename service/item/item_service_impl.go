@@ -45,3 +45,24 @@ func (service *itemServiceImpl) Add(ctx *fiber.Ctx, req item_entity.AddItemReque
 		Id: itemId,
 	}, nil
 }
+
+func (service *itemServiceImpl) Search(ctx *fiber.Ctx, searchQuery item_entity.SearchItemQuery) (item_entity.SearchItemResponse, error) {
+	if err := service.Validator.Struct(searchQuery); err != nil {
+		return item_entity.SearchItemResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	merchantId := ctx.Params("merchantId")
+	itemSearched, err := service.ItemRepository.Search(ctx.UserContext(), searchQuery, merchantId)
+	if err != nil {
+		return item_entity.SearchItemResponse{}, err
+	}
+
+	return item_entity.SearchItemResponse{
+		Data: itemSearched,
+		Meta: &item_entity.MetaData{
+			Limit:  searchQuery.Limit,
+			Offset: searchQuery.Offset,
+			Total:  len(*itemSearched),
+		},
+	}, nil
+}

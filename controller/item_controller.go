@@ -29,3 +29,21 @@ func (controller ItemController) Add(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(resp)
 }
+
+func (controller ItemController) Search(ctx *fiber.Ctx) error {
+	searchQuery := new(item_entity.SearchItemQuery)
+	searchQuery.Limit = 5
+	searchQuery.Offset = 0
+
+	if err := ctx.QueryParser(searchQuery); err != nil {
+		return exc.BadRequestException("Failed to parse request query")
+	}
+
+	resp, err := controller.ItemService.Search(ctx, *searchQuery)
+	if err != nil {
+		return exc.Exception(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+
+}
