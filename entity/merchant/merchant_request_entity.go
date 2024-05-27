@@ -11,3 +11,11 @@ type LocationDetails struct {
 	Latitude  float64 `json:"lat" validate:"required,validateGeoCoord=lat"`
 	Longitude float64 `json:"long" validate:"required,validateGeoCoord=long"`
 }
+
+type SearchNearbyMerchantQuery struct {
+	MerchantId       string `query:"merchantId"`
+	Name             string `query:"name"`
+	MerchantCategory string `query:"merchantCategory"`
+	Limit            int    `query:"limit"`
+	Offset           int    `query:"offset"`
+}
