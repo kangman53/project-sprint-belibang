@@ -11,3 +11,8 @@ type LocationDetails struct {
 	Latitude  float64 `json:"lat" validate:"required,validateGeoCoord=lat"`
 	Longitude float64 `json:"long" validate:"required,validateGeoCoord=long"`
 }
+
+type SearchMerchantQuery struct {
+	Id, Name, Category, CreatedAt string
+	Limit, Offset                 int
+}
