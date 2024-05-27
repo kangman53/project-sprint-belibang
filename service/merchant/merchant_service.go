@@ -7,4 +7,5 @@ import (
 
 type MerchantService interface {
 	Add(ctx *fiber.Ctx, req merchant_entity.AddMerchantRequest) (merchant_entity.AddMerchantResponse, error)
+	SearchNearby(ctx *fiber.Ctx, query merchant_entity.SearchNearbyMerchantQuery) (merchant_entity.SearchNearbyMerchantResponse, error)
 }
