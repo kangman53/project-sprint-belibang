@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	exc "github.com/kangman53/project-sprint-belibang/exceptions"
+	"github.com/kangman53/project-sprint-belibang/helpers"
 )
 
 type authServiceImpl struct {
@@ -43,4 +44,14 @@ func (service *authServiceImpl) AuthorizeRole(role string) fiber.Handler {
 		}
 		return ctx.Next()
 	}
+}
+
+func (service *authServiceImpl) GetValidUser(ctx *fiber.Ctx) (string, error) {
+	userInfo := ctx.Locals(helpers.JwtContextKey).(*jwt.Token)
+	// convert userInfo claims to jwt mapclaims
+	jwtconf := userInfo.Claims.((jwt.MapClaims))
+	// convert user_id to string
+	userId := jwtconf["user_id"].(string)
+
+	return userId, nil
 }
