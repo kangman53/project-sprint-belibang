@@ -6,11 +6,13 @@ import (
 
 	item_repository "github.com/kangman53/project-sprint-belibang/repository/item"
 	merchant_repository "github.com/kangman53/project-sprint-belibang/repository/merchant"
+	purchase_repository "github.com/kangman53/project-sprint-belibang/repository/purchase"
 	user_repository "github.com/kangman53/project-sprint-belibang/repository/user"
 	auth_service "github.com/kangman53/project-sprint-belibang/service/auth"
 	file_service "github.com/kangman53/project-sprint-belibang/service/file"
 	item_service "github.com/kangman53/project-sprint-belibang/service/item"
 	merchant_service "github.com/kangman53/project-sprint-belibang/service/merchant"
+	purchase_service "github.com/kangman53/project-sprint-belibang/service/purchase"
 	user_service "github.com/kangman53/project-sprint-belibang/service/user"
 
 	"github.com/go-playground/validator"
@@ -40,6 +42,10 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	itemService := item_service.NewItemService(itemRepository, validator)
 	itemController := controller.NewItemController(itemService)
 
+	purchaseRepository := purchase_repository.NewPurchaseRepository(dbPool)
+	purchaseService := purchase_service.NewPurchaseService(purchaseRepository, authService, validator)
+	purchaseController := controller.NewPurchaseController(purchaseService)
+
 	// Users API
 	adminApi := app.Group("/admin")
 	adminApi.Post("/register", userController.Register)
@@ -63,4 +69,5 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 
 	// Puchase API
 	app.Get("/merchants/nearby/:coordinate", authService.AuthorizeRole("users"), merchantController.SearchNearby)
+	userApi.Post("/estimate", authService.AuthorizeRole("users"), purchaseController.Estimate)
 }
