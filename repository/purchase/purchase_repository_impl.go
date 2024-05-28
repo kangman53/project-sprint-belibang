@@ -25,9 +25,10 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	startingPoint := 0
 	var purchaseId string
 	var merchantId *string
-	var totalPrice, estimateDeliveryTime, insertedItemCount int
 	var distance float32
+	var totalPrice, estimateDeliveryTime, insertedItemCount int
 	var insertOrderQuery, selectOrderItemQuery, insertOrderItemQuery, itemIds []string
+	var values []interface{}
 
 	tx, err := repository.DBpool.Begin(ctx)
 	if err != nil {
@@ -45,14 +46,16 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 
 		insertOrderQuery = append(insertOrderQuery, fmt.Sprintf(`insert_order_%d AS (
 			INSERT INTO orders (merchant_id, is_starting_point, purchase_id) 
-			VALUES ('%s', %t, (SELECT purchase_id FROM purchase_insert))
+			VALUES ($%d, $%d, (SELECT purchase_id FROM purchase_insert))
 			RETURNING id as order_id
-		)`, i, order.MechantId, *order.IsStartingPoint))
+		)`, i, len(values)+1, len(values)+2))
+		values = append(values, order.MechantId, *order.IsStartingPoint)
 
 		selectOrderItemQuery = nil
 		for j, orderItem := range order.OrderItem {
 			itemIds = append(itemIds, "'"+orderItem.ItemId+"'")
-			selectOrderItemQuery = append(selectOrderItemQuery, fmt.Sprintf("SELECT '%s' AS item_id, %d AS quantity", orderItem.ItemId, orderItem.Quantity))
+			selectOrderItemQuery = append(selectOrderItemQuery, fmt.Sprintf("SELECT $%d AS item_id, CAST($%d AS INTEGER) AS quantity", len(values)+1, len(values)+2))
+			values = append(values, orderItem.ItemId, orderItem.Quantity)
 
 			if j+1 == len(order.OrderItem) {
 				insertOrderItemQuery = append(insertOrderItemQuery, fmt.Sprintf(`SELECT item_id, quantity, (SELECT order_id FROM insert_order_%d)
@@ -71,11 +74,13 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	purchaseQuery := fmt.Sprintf(`WITH 
 	purchase_insert AS (
 		INSERT INTO purchases (user_id, total_price, estimated_delivery_time, distance, latitude, longitude)
-		VALUES ('%s', 0, 0, 0, %f, %f) RETURNING id as purchase_id
-	),`, req.UserId, req.Latitude, req.Longitude)
+		VALUES ($%d, 0, 0, 0, $%d, $%d) RETURNING id as purchase_id
+	),`, len(values)+1, len(values)+2, len(values)+3)
+	values = append(values, req.UserId, req.Latitude, req.Longitude)
+
 	combinedQuery := fmt.Sprintf("%s\n%s, insert_order_items AS (INSERT INTO order_items (item_id, quantity, order_id)\n%s\nRETURNING id) SELECT count(insert_order_items), purchase_insert.purchase_id FROM purchase_insert JOIN insert_order_items ON 1=1	GROUP BY purchase_insert.purchase_id;", purchaseQuery, strings.Join(insertOrderQuery, ", "), strings.Join(insertOrderItemQuery, "\nUNION ALL\n"))
 
-	if err := tx.QueryRow(ctx, combinedQuery).Scan(&insertedItemCount, &purchaseId); err != nil {
+	if err := tx.QueryRow(ctx, combinedQuery, values...).Scan(&insertedItemCount, &purchaseId); err != nil {
 		return purchase_entity.Purchase{}, err
 	}
 
@@ -85,6 +90,7 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	}
 
 	// update total_price, distance, and estiamted_delivery_time query
+	values = nil
 	updateQuery := fmt.Sprintf(`
 	UPDATE purchases
 	SET total_price = (
@@ -94,36 +100,42 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 		JOIN order_items ON orders.id = order_items.order_id
 		JOIN items ON order_items.item_id = items.id
 		WHERE items.id in  (%s)
-		AND purchases.id = '%s'
+		AND purchases.id = $%d
 	),
 	distance = (
 		SELECT ROUND (6371 * ACOS(
-            COS(RADIANS(%f)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(%f)) + 
-            SIN(RADIANS(%f)) * SIN(RADIANS(latitude))
+            COS(RADIANS($%d)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS($%d)) + 
+            SIN(RADIANS($%d)) * SIN(RADIANS(latitude))
         )::numeric, 2)
 		FROM merchants
-		WHERE id = '%s'
+		WHERE id = $%d
 	),
 	estimated_delivery_time = (
 		SELECT ((6371 * ACOS(
-			COS(RADIANS(%f)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(%f)) + 
-			SIN(RADIANS(%f)) * SIN(RADIANS(latitude))
+			COS(RADIANS($%d)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS($%d)) + 
+			SIN(RADIANS($%d)) * SIN(RADIANS(latitude))
 		)) / 40) * 60
 		FROM merchants
-		WHERE id = '%s'
+		WHERE id = $%d
 	)
-	WHERE id = '%s'
+	WHERE id = $%d
 	AND (
 		SELECT 6371 * ACOS(
-            COS(RADIANS(%f)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(%f)) + 
-            SIN(RADIANS(%f)) * SIN(RADIANS(latitude))
+            COS(RADIANS($%d)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS($%d)) + 
+            SIN(RADIANS($%d)) * SIN(RADIANS(latitude))
         )
 		FROM merchants
-		WHERE id = '%s'
+		WHERE id = $%d
 	) <= 3
 	returning total_price, distance, estimated_delivery_time;
-	`, strings.Join(itemIds, ", "), purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId, req.Latitude, req.Longitude, req.Latitude, *merchantId, purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId)
-	if err := tx.QueryRow(ctx, updateQuery).Scan(&totalPrice, &distance, &estimateDeliveryTime); err != nil {
+	`, strings.Join(itemIds, ", "), len(values)+1, len(values)+2, len(values)+3, len(values)+4, len(values)+5, len(values)+6, len(values)+7, len(values)+8, len(values)+9, len(values)+10, len(values)+11, len(values)+12, len(values)+13, len(values)+14)
+	values = append(values, purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId, req.Latitude, req.Longitude, req.Latitude, *merchantId, purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId)
+
+	if err := tx.QueryRow(ctx, updateQuery, values...).Scan(&totalPrice, &distance, &estimateDeliveryTime); err != nil {
+		return purchase_entity.Purchase{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return purchase_entity.Purchase{}, err
 	}
 
