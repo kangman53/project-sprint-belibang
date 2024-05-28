@@ -2,6 +2,7 @@ package purchase_service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
@@ -45,6 +46,12 @@ func (service *purchaseServiceImpl) Estimate(ctx *fiber.Ctx, req purchase_entity
 	userContext := ctx.Context()
 	purchaseInserted, err := service.PurchaseRepository.Estimate(userContext, purchase)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return purchase_entity.PurchaseEstimateResponse{}, exc.BadRequestException("distance too far")
+		}
+		if strings.Contains(err.Error(), "orders_merchant_id_fkey") {
+			return purchase_entity.PurchaseEstimateResponse{}, exc.NotFoundException("merchantId not found")
+		}
 		return purchase_entity.PurchaseEstimateResponse{}, err
 	}
 

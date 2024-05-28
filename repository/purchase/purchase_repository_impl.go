@@ -107,7 +107,7 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
         )
 		FROM merchants
 		WHERE id = '%s'
-	) <= 30
+	) <= 3
 	returning total_price, distance, estimated_delivery_time;
 	`, strings.Join(itemIds, ", "), purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId, req.Latitude, req.Longitude, req.Latitude, *merchantId, purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId)
 	if err := repository.DBpool.QueryRow(ctx, updateQuery).Scan(&totalPrice, &distance, &estimateDeliveryTime); err != nil {
