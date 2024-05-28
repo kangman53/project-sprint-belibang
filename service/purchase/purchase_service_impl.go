@@ -62,6 +62,5 @@ func (service *purchaseServiceImpl) Estimate(ctx *fiber.Ctx, req purchase_entity
 		TotalPrice:                     purchaseInserted.TotalPrice,
 		EstimatedDeliveryTimeInMinutes: purchaseInserted.EstimatedDeliveryTimeInMinutes,
 		CalculatedEstimateId:           purchaseInserted.CalculatedEstimateId,
-		Distance:                       purchaseInserted.Distance,
 	}, nil
 }
