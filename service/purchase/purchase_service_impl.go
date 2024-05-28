@@ -52,6 +52,9 @@ func (service *purchaseServiceImpl) Estimate(ctx *fiber.Ctx, req purchase_entity
 		if strings.Contains(err.Error(), "orders_merchant_id_fkey") {
 			return purchase_entity.PurchaseEstimateResponse{}, exc.NotFoundException("merchantId not found")
 		}
+		if strings.Contains(err.Error(), "not found") {
+			return purchase_entity.PurchaseEstimateResponse{}, exc.NotFoundException("itemId not found")
+		}
 		return purchase_entity.PurchaseEstimateResponse{}, err
 	}
 

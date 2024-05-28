@@ -2,6 +2,7 @@ package purchase_repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,9 +25,15 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	startingPoint := 0
 	var purchaseId string
 	var merchantId *string
-	var totalPrice, estimateDeliveryTime int
+	var totalPrice, estimateDeliveryTime, insertedItemCount int
 	var distance float32
 	var insertOrderQuery, selectOrderItemQuery, insertOrderItemQuery, itemIds []string
+
+	tx, err := repository.DBpool.Begin(ctx)
+	if err != nil {
+		return purchase_entity.Purchase{}, err
+	}
+	defer tx.Rollback(ctx)
 
 	for i, order := range req.Order {
 		if *order.IsStartingPoint && startingPoint == 0 {
@@ -66,9 +73,15 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 		INSERT INTO purchases (user_id, total_price, estimated_delivery_time, distance, latitude, longitude)
 		VALUES ('%s', 0, 0, 0, %f, %f) RETURNING id as purchase_id
 	),`, req.UserId, req.Latitude, req.Longitude)
-	combinedQuery := fmt.Sprintf("%s\n%s,\n\ninsert_order_item AS (INSERT INTO order_items (item_id, quantity, order_id)\n%s) SELECT purchase_id FROM purchase_insert;", purchaseQuery, strings.Join(insertOrderQuery, ", "), strings.Join(insertOrderItemQuery, "\nUNION ALL\n"))
-	if err := repository.DBpool.QueryRow(ctx, combinedQuery).Scan(&purchaseId); err != nil {
+	combinedQuery := fmt.Sprintf("%s\n%s, insert_order_items AS (INSERT INTO order_items (item_id, quantity, order_id)\n%s\nRETURNING id) SELECT count(insert_order_items), purchase_insert.purchase_id FROM purchase_insert JOIN insert_order_items ON 1=1	GROUP BY purchase_insert.purchase_id;", purchaseQuery, strings.Join(insertOrderQuery, ", "), strings.Join(insertOrderItemQuery, "\nUNION ALL\n"))
+
+	if err := tx.QueryRow(ctx, combinedQuery).Scan(&insertedItemCount, &purchaseId); err != nil {
 		return purchase_entity.Purchase{}, err
+	}
+
+	if insertedItemCount != len(itemIds) {
+		tx.Rollback(ctx)
+		return purchase_entity.Purchase{}, errors.New("itemId not found")
 	}
 
 	// update total_price, distance, and estiamted_delivery_time query
@@ -110,7 +123,7 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	) <= 3
 	returning total_price, distance, estimated_delivery_time;
 	`, strings.Join(itemIds, ", "), purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId, req.Latitude, req.Longitude, req.Latitude, *merchantId, purchaseId, req.Latitude, req.Longitude, req.Latitude, *merchantId)
-	if err := repository.DBpool.QueryRow(ctx, updateQuery).Scan(&totalPrice, &distance, &estimateDeliveryTime); err != nil {
+	if err := tx.QueryRow(ctx, updateQuery).Scan(&totalPrice, &distance, &estimateDeliveryTime); err != nil {
 		return purchase_entity.Purchase{}, err
 	}
 
