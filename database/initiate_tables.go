@@ -78,6 +78,42 @@ func InitiateTables(dbPool *pgxpool.Pool) error {
 		CREATE INDEX IF NOT EXISTS index_items_created_at_asc
 			ON items (created_at ASC);
 		`,
+		`
+		CREATE TABLE IF NOT EXISTS purchases (
+			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			user_id VARCHAR(36) NOT NULL,
+			total_price INT NOT NULL,
+			estimated_delivery_time INT NOT NULL,
+			distance DOUBLE PRECISION NOT NULL,
+			latitude DOUBLE PRECISION NOT NULL,
+			longitude DOUBLE PRECISION NOT NULL,
+			status VARCHAR(7) NOT NULL DEFAULT 'pending',
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE NO ACTION
+		);
+		`,
+		`
+		CREATE TABLE IF NOT EXISTS orders (
+			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			merchant_id VARCHAR(36) NOT NULL,
+			is_starting_point BOOLEAN NOT NULL,
+			purchase_id VARCHAR(36) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE NO ACTION,
+			FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE NO ACTION
+		);
+		`,
+		`
+		CREATE TABLE IF NOT EXISTS order_items (
+			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			order_id VARCHAR(36) NOT NULL,
+			item_id VARCHAR(36) NOT NULL,
+			quantity int NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+			FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+		);
+		`,
 		// Add more table creation queries here if needed
 	}
 
