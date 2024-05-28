@@ -1,0 +1,57 @@
+package purchase_service
+
+import (
+	"fmt"
+
+	"github.com/go-playground/validator"
+	"github.com/gofiber/fiber/v2"
+	purchase_entity "github.com/kangman53/project-sprint-belibang/entity/Purchase"
+	exc "github.com/kangman53/project-sprint-belibang/exceptions"
+	purchase_repository "github.com/kangman53/project-sprint-belibang/repository/purchase"
+	auth_service "github.com/kangman53/project-sprint-belibang/service/auth"
+)
+
+type purchaseServiceImpl struct {
+	PurchaseRepository purchase_repository.PurchaseRepository
+	AuthService        auth_service.AuthService
+	Validator          *validator.Validate
+}
+
+func NewPurchaseService(purchaseRepository purchase_repository.PurchaseRepository, authService auth_service.AuthService, validator *validator.Validate) PurchaseService {
+	return &purchaseServiceImpl{
+		PurchaseRepository: purchaseRepository,
+		AuthService:        authService,
+		Validator:          validator,
+	}
+}
+
+func (service *purchaseServiceImpl) Estimate(ctx *fiber.Ctx, req purchase_entity.PurchaseEstimateRequest) (purchase_entity.PurchaseEstimateResponse, error) {
+	if err := service.Validator.Struct(req); err != nil {
+		return purchase_entity.PurchaseEstimateResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	userId, err := service.AuthService.GetValidUser(ctx)
+	if err != nil {
+		return purchase_entity.PurchaseEstimateResponse{}, exc.UnauthorizedException("Unauthorized")
+	}
+
+	purchase := purchase_entity.Purchase{
+		UserId:    userId,
+		Latitude:  req.UserLocation.Latitude,
+		Longitude: req.UserLocation.Longitude,
+		Order:     *req.Orders,
+	}
+
+	userContext := ctx.Context()
+	purchaseInserted, err := service.PurchaseRepository.Estimate(userContext, purchase)
+	if err != nil {
+		return purchase_entity.PurchaseEstimateResponse{}, err
+	}
+
+	return purchase_entity.PurchaseEstimateResponse{
+		TotalPrice:                     purchaseInserted.TotalPrice,
+		EstimatedDeliveryTimeInMinutes: purchaseInserted.EstimatedDeliveryTimeInMinutes,
+		CalculatedEstimateId:           purchaseInserted.CalculatedEstimateId,
+		Distance:                       purchaseInserted.Distance,
+	}, nil
+}
