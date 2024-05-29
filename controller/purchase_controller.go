@@ -29,3 +29,16 @@ func (controller PurchaseController) Estimate(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (controller PurchaseController) Order(ctx *fiber.Ctx) error {
+	purchaseReq := new(purchase_entity.PurchaseOrderRequest)
+	if err := ctx.BodyParser(purchaseReq); err != nil {
+		return exc.BadRequestException("Failed to parse request body")
+	}
+
+	resp, err := controller.PurchaseService.Order(ctx, *purchaseReq)
+	if err != nil {
+		return exc.Exception(ctx, err)
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(resp)
+}
