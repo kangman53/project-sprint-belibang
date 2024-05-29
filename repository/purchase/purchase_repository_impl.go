@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	purchase_entity "github.com/kangman53/project-sprint-belibang/entity/Purchase"
 	"github.com/kangman53/project-sprint-belibang/exceptions"
@@ -23,7 +24,7 @@ func NewPurchaseRepository(dbPool *pgxpool.Pool) PurchaseRepository {
 
 func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purchase_entity.Purchase) (purchase_entity.Purchase, error) {
 	startingPoint := 0
-	var purchaseId string
+	var purchaseId, calculatedEstimateId string
 	var merchantId *string
 	var distance float32
 	var totalPrice, estimateDeliveryTime, insertedItemCount int
@@ -74,13 +75,13 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 	purchaseQuery := fmt.Sprintf(`WITH 
 	purchase_insert AS (
 		INSERT INTO purchases (user_id, total_price, estimated_delivery_time, distance, latitude, longitude)
-		VALUES ($%d, 0, 0, 0, $%d, $%d) RETURNING id as purchase_id
+		VALUES ($%d, 0, 0, 0, $%d, $%d) RETURNING id as purchase_id, calculated_estimate_id
 	),`, len(values)+1, len(values)+2, len(values)+3)
 	values = append(values, req.UserId, req.Latitude, req.Longitude)
 
-	combinedQuery := fmt.Sprintf("%s\n%s, insert_order_items AS (INSERT INTO order_items (item_id, quantity, order_id)\n%s\nRETURNING id) SELECT count(insert_order_items), purchase_insert.purchase_id FROM purchase_insert JOIN insert_order_items ON 1=1	GROUP BY purchase_insert.purchase_id;", purchaseQuery, strings.Join(insertOrderQuery, ", "), strings.Join(insertOrderItemQuery, "\nUNION ALL\n"))
+	combinedQuery := fmt.Sprintf("%s\n%s, insert_order_items AS (INSERT INTO order_items (item_id, quantity, order_id)\n%s\nRETURNING id) SELECT count(insert_order_items), purchase_insert.purchase_id, purchase_insert.calculated_estimate_id FROM purchase_insert JOIN insert_order_items ON 1=1	GROUP BY purchase_insert.purchase_id, purchase_insert.calculated_estimate_id;", purchaseQuery, strings.Join(insertOrderQuery, ", "), strings.Join(insertOrderItemQuery, "\nUNION ALL\n"))
 
-	if err := tx.QueryRow(ctx, combinedQuery, values...).Scan(&insertedItemCount, &purchaseId); err != nil {
+	if err := tx.QueryRow(ctx, combinedQuery, values...).Scan(&insertedItemCount, &purchaseId, &calculatedEstimateId); err != nil {
 		return purchase_entity.Purchase{}, err
 	}
 
@@ -143,20 +144,21 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 		TotalPrice:                     totalPrice,
 		Distance:                       distance,
 		EstimatedDeliveryTimeInMinutes: estimateDeliveryTime,
-		CalculatedEstimateId:           purchaseId,
+		CalculatedEstimateId:           calculatedEstimateId,
 	}, nil
 }
 
 func (repository *purchaseRepositoryImpl) Order(ctx context.Context, req purchase_entity.Purchase) (purchase_entity.Purchase, error) {
-	query := "UPDATE purchases SET status = 'ordered' WHERE id = $1 AND user_id = $2 AND status = 'pending' RETURNING id"
-	result, err := repository.DBpool.Exec(ctx, query, req.Id, req.UserId)
-	if err != nil {
+	var purchaseId string
+	query := "UPDATE purchases SET status = 'ordered' WHERE calculated_estimate_id = $1 AND user_id = $2 AND status = 'pending' RETURNING id"
+	if err := repository.DBpool.QueryRow(ctx, query, req.CalculatedEstimateId, req.UserId).Scan(&purchaseId); err != nil {
+		if err == pgx.ErrNoRows {
+			return purchase_entity.Purchase{}, errors.New("not found")
+		}
 		return purchase_entity.Purchase{}, err
 	}
 
-	if result.RowsAffected() == 0 {
-		return purchase_entity.Purchase{}, errors.New("not found")
-	}
-
-	return req, nil
+	return purchase_entity.Purchase{
+		Id: purchaseId,
+	}, nil
 }

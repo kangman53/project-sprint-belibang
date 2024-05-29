@@ -76,8 +76,8 @@ func (service *purchaseServiceImpl) Order(ctx *fiber.Ctx, req purchase_entity.Pu
 	}
 
 	purchase := purchase_entity.Purchase{
-		UserId: userId,
-		Id:     req.CalculatedEstimateId,
+		UserId:               userId,
+		CalculatedEstimateId: req.CalculatedEstimateId,
 	}
 
 	userContext := ctx.Context()

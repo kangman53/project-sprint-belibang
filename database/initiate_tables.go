@@ -81,6 +81,7 @@ func InitiateTables(dbPool *pgxpool.Pool) error {
 		`
 		CREATE TABLE IF NOT EXISTS purchases (
 			id VARCHAR(36) PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+			calculated_estimate_id VARCHAR(36) NOT NULL DEFAULT gen_random_uuid(),
 			user_id VARCHAR(36) NOT NULL,
 			total_price INT NOT NULL,
 			estimated_delivery_time INT NOT NULL,
