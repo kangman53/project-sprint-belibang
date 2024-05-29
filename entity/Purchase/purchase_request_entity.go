@@ -12,3 +12,11 @@ type PurchaseEstimateRequest struct {
 type PurchaseOrderRequest struct {
 	CalculatedEstimateId string `json:"calculatedEstimateId" validate:"required"`
 }
+
+type SearcHistoryOrderQuery struct {
+	MerchantId       string `query:"merchantId"`
+	Name             string `query:"name"`
+	MerchantCategory string `query:"merchantCategory"`
+	Limit            int    `query:"limit"`
+	Offset           int    `query:"offset"`
+}

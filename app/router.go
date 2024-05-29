@@ -71,4 +71,5 @@ func RegisterBluePrint(app *fiber.App, dbPool *pgxpool.Pool) {
 	app.Get("/merchants/nearby/:coordinate", authService.AuthorizeRole("users"), merchantController.SearchNearby)
 	userApi.Post("/estimate", authService.AuthorizeRole("users"), purchaseController.Estimate)
 	userApi.Post("/orders", authService.AuthorizeRole("users"), purchaseController.Order)
+	userApi.Get("/orders", authService.AuthorizeRole("users"), purchaseController.HistoryOrder)
 }

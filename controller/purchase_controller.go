@@ -42,3 +42,20 @@ func (controller PurchaseController) Order(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(resp)
 }
+
+func (controller PurchaseController) HistoryOrder(ctx *fiber.Ctx) error {
+	searchQuery := new(purchase_entity.SearcHistoryOrderQuery)
+	searchQuery.Limit = 5
+	searchQuery.Offset = 0
+
+	if err := ctx.QueryParser(searchQuery); err != nil {
+		return exc.BadRequestException("Failed to parse request query")
+	}
+
+	resp, err := controller.PurchaseService.HistoryOrder(ctx, *searchQuery)
+	if err != nil {
+		return exc.Exception(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
