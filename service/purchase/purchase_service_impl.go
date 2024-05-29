@@ -92,3 +92,21 @@ func (service *purchaseServiceImpl) Order(ctx *fiber.Ctx, req purchase_entity.Pu
 		OrderId: purchaseUpdated.Id,
 	}, nil
 }
+
+func (service *purchaseServiceImpl) HistoryOrder(ctx *fiber.Ctx, searchQuery purchase_entity.SearcHistoryOrderQuery) (*[]purchase_entity.SearchHistoryOrderResponse, error) {
+	if err := service.Validator.Struct(searchQuery); err != nil {
+		return &[]purchase_entity.SearchHistoryOrderResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	userId, err := service.AuthService.GetValidUser(ctx)
+	if err != nil {
+		return &[]purchase_entity.SearchHistoryOrderResponse{}, exc.UnauthorizedException("Unauthorized")
+	}
+
+	orderSearched, err := service.PurchaseRepository.HistoryOrder(ctx.UserContext(), searchQuery, userId)
+	if err != nil {
+		return &[]purchase_entity.SearchHistoryOrderResponse{}, err
+	}
+
+	return orderSearched, nil
+}

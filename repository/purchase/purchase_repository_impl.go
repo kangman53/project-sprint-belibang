@@ -165,34 +165,34 @@ func (repository *purchaseRepositoryImpl) Order(ctx context.Context, req purchas
 
 func (repository *purchaseRepositoryImpl) HistoryOrder(ctx context.Context, searchQuery purchase_entity.SearcHistoryOrderQuery, userId string) (*[]purchase_entity.SearchHistoryOrderResponse, error) {
 	query := `SELECT jsonb_build_object(
-				'orderId', p.id,
-				'orders', jsonb_agg(
-					jsonb_build_object(
-						'merchant', jsonb_build_object(
-							'merchantId', m.id,
-							'name', m.name,
-							'merchantCategory', m.category,
-							'imageUrl', m.image_url,
-							'location', jsonb_build_object(
-								'lat', m.latitude,
-								'long', m.longitude
-							),
-							'createdAt', to_char(m.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+			'orderId', p.id,
+			'orders', jsonb_agg(
+				jsonb_build_object(
+					'merchant', jsonb_build_object(
+						'merchantId', m.id,
+						'name', m.name,
+						'merchantCategory', m.category,
+						'imageUrl', m.image_url,
+						'location', jsonb_build_object(
+							'lat', m.latitude,
+							'long', m.longitude
 						),
-						'items', jsonb_agg(
-							jsonb_build_object(
-								'itemId', i.id,
-								'name', i.name,
-								'productCategory', i.category,
-								'price', i.price,
-								'quantity', oi.quantity,
-								'imageUrl', i.image_url,
-								'createdAt', to_char(i.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-							)
+						'createdAt', to_char(m.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+					),
+					'items', jsonb_agg(
+						jsonb_build_object(
+							'itemId', i.id,
+							'name', i.name,
+							'productCategory', i.category,
+							'price', i.price,
+							'quantity', oi.quantity,
+							'imageUrl', i.image_url,
+							'createdAt', to_char(i.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
 						)
 					)
 				)
-			) AS result
+			)
+		) AS result
 	FROM purchases p
 	JOIN orders o ON p.id = o.purchase_id
 	JOIN merchants m ON o.merchant_id = m.id
