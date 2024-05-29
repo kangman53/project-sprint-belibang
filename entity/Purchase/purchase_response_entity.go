@@ -5,3 +5,7 @@ type PurchaseEstimateResponse struct {
 	EstimatedDeliveryTimeInMinutes int    `json:"estimatedDeliveryTimeInMinutes"`
 	CalculatedEstimateId           string `json:"calculatedEstimateId"`
 }
+
+type PurchaseOrderResponse struct {
+	OrderId string `json:"orderId"`
+}

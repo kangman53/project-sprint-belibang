@@ -8,3 +8,7 @@ type PurchaseEstimateRequest struct {
 	UserLocation *merchant_entity.LocationDetails `json:"userLocation" validate:"required"`
 	Orders       *[]Order                         `json:"orders" validate:"required,dive"`
 }
+
+type PurchaseOrderRequest struct {
+	CalculatedEstimateId string `json:"calculatedEstimateId" validate:"required"`
+}
