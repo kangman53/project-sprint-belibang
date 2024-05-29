@@ -2,6 +2,8 @@ package merchant_service
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
@@ -43,5 +45,39 @@ func (service *merchantServiceImpl) Add(ctx *fiber.Ctx, req merchant_entity.AddM
 
 	return merchant_entity.AddMerchantResponse{
 		Id: merchantId,
+	}, nil
+}
+
+func (service *merchantServiceImpl) SearchNearby(ctx *fiber.Ctx, query merchant_entity.SearchNearbyMerchantQuery) (merchant_entity.SearchNearbyMerchantResponse, error) {
+	if err := service.Validator.Struct(query); err != nil {
+		return merchant_entity.SearchNearbyMerchantResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	params := strings.Split(ctx.Params("coordinate"), ",")
+	if len(params) != 2 {
+		return merchant_entity.SearchNearbyMerchantResponse{}, exc.BadRequestException("latitude or longitude not valid")
+	}
+
+	latParam := params[0]
+	longParam := params[1]
+
+	// latParam := ctx.Params("lat")
+	// longParam := ctx.Params("long")
+
+	lat, err1 := strconv.ParseFloat(latParam, 64)
+	long, err2 := strconv.ParseFloat(longParam, 64)
+
+	if err1 != nil || err2 != nil {
+		return merchant_entity.SearchNearbyMerchantResponse{}, exc.BadRequestException("latitude or longitude not valid")
+	}
+
+	userCtx := ctx.UserContext()
+	dataSearch, err := service.MerchantRepository.SearchNearby(userCtx, query, lat, long)
+	if err != nil {
+		return merchant_entity.SearchNearbyMerchantResponse{}, err
+	}
+
+	return merchant_entity.SearchNearbyMerchantResponse{
+		Data: dataSearch,
 	}, nil
 }
