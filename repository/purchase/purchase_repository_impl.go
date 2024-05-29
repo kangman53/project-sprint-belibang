@@ -146,3 +146,17 @@ func (repository *purchaseRepositoryImpl) Estimate(ctx context.Context, req purc
 		CalculatedEstimateId:           purchaseId,
 	}, nil
 }
+
+func (repository *purchaseRepositoryImpl) Order(ctx context.Context, req purchase_entity.Purchase) (purchase_entity.Purchase, error) {
+	query := "UPDATE purchases SET status = 'ordered' WHERE id = $1 AND user_id = $2 AND status = 'pending' RETURNING id"
+	result, err := repository.DBpool.Exec(ctx, query, req.Id, req.UserId)
+	if err != nil {
+		return purchase_entity.Purchase{}, err
+	}
+
+	if result.RowsAffected() == 0 {
+		return purchase_entity.Purchase{}, errors.New("not found")
+	}
+
+	return req, nil
+}
