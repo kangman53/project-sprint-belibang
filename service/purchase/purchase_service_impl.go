@@ -64,3 +64,31 @@ func (service *purchaseServiceImpl) Estimate(ctx *fiber.Ctx, req purchase_entity
 		CalculatedEstimateId:           purchaseInserted.CalculatedEstimateId,
 	}, nil
 }
+
+func (service *purchaseServiceImpl) Order(ctx *fiber.Ctx, req purchase_entity.PurchaseOrderRequest) (purchase_entity.PurchaseOrderResponse, error) {
+	if err := service.Validator.Struct(req); err != nil {
+		return purchase_entity.PurchaseOrderResponse{}, exc.BadRequestException(fmt.Sprintf("Bad request: %s", err))
+	}
+
+	userId, err := service.AuthService.GetValidUser(ctx)
+	if err != nil {
+		return purchase_entity.PurchaseOrderResponse{}, exc.UnauthorizedException("Unauthorized")
+	}
+
+	purchase := purchase_entity.Purchase{
+		UserId: userId,
+		Id:     req.CalculatedEstimateId,
+	}
+
+	userContext := ctx.Context()
+	purchaseUpdated, err := service.PurchaseRepository.Order(userContext, purchase)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return purchase_entity.PurchaseOrderResponse{}, exc.NotFoundException("calculatedEstimateId not found")
+		}
+	}
+
+	return purchase_entity.PurchaseOrderResponse{
+		OrderId: purchaseUpdated.Id,
+	}, nil
+}
