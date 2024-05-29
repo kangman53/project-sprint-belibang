@@ -16,11 +16,11 @@ type PurchaseOrderResponse struct {
 }
 
 type SearchHistoryOrderResponse struct {
-	OrderId string                      `json:"orderId"`
-	Orders  *[]SearchHistoryOrderOrders `json:"orders"`
+	OrderId string                    `json:"orderId"`
+	Orders  *[]SearchHistoryOrderData `json:"orders"`
 }
 
-type SearchHistoryOrderOrders struct {
+type SearchHistoryOrderData struct {
 	Merchant *merchant_entity.MerchantData `json:"merchant"`
 	Items    *[]item_entity.SearchItemData `json:"items"`
 }
